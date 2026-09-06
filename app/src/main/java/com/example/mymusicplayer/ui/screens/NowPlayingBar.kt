@@ -19,6 +19,7 @@ import com.example.mymusicplayer.ui.MusicViewModel
 fun NowPlayingBar(viewModel: MusicViewModel) {
     val currentSong by viewModel.currentSong.collectAsState()
     val isPlaying by viewModel.isPlaying.collectAsState()
+    val showArtist by viewModel.showArtist.collectAsState()
 
     if (currentSong != null) {
         Surface(
@@ -39,11 +40,13 @@ fun NowPlayingBar(viewModel: MusicViewModel) {
                         style = MaterialTheme.typography.titleSmall,
                         maxLines = 1
                     )
-                    Text(
-                        text = currentSong!!.artist,
-                        style = MaterialTheme.typography.bodySmall,
-                        maxLines = 1
-                    )
+                    if (showArtist && currentSong!!.artist.isNotBlank() && currentSong!!.artist != "Unknown Artist") {
+                        Text(
+                            text = currentSong!!.artist,
+                            style = MaterialTheme.typography.bodySmall,
+                            maxLines = 1
+                        )
+                    }
                 }
                 IconButton(onClick = { viewModel.skipToPrevious() }) {
                     Icon(Icons.Default.SkipPrevious, contentDescription = "Previous")

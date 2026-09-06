@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Warning
@@ -21,6 +22,7 @@ import com.example.mymusicplayer.ui.MusicViewModel
 @Composable
 fun PlaylistDetailScreen(viewModel: MusicViewModel, playlist: Playlist, onBack: () -> Unit) {
     val songs by viewModel.getSongsInPlaylist(playlist.id).collectAsState(emptyList())
+    val showArtist by viewModel.showArtist.collectAsState()
 
     Scaffold(
         topBar = {
@@ -28,7 +30,7 @@ fun PlaylistDetailScreen(viewModel: MusicViewModel, playlist: Playlist, onBack: 
                 title = { Text(playlist.name) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        // Icon could be Back arrow
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 }
             )
@@ -62,7 +64,12 @@ fun PlaylistDetailScreen(viewModel: MusicViewModel, playlist: Playlist, onBack: 
                                 )
                             }
                         }
-                        Text(text = song.artist, style = MaterialTheme.typography.bodyMedium)
+                        if (showArtist && song.artist.isNotBlank() && song.artist != "Unknown Artist") {
+                            Text(
+                                text = song.artist,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
                         if (!exists) {
                             Text(
                                 text = "File not found on device",

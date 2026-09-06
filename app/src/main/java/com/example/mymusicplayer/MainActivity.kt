@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -28,6 +29,7 @@ import com.example.mymusicplayer.ui.MusicViewModel
 import com.example.mymusicplayer.ui.screens.*
 import com.example.mymusicplayer.ui.theme.MyMusicPlayerTheme
 
+@OptIn(ExperimentalMaterial3Api::class)
 class MainActivity : ComponentActivity() {
     private val viewModel: MusicViewModel by viewModels()
 
@@ -44,6 +46,16 @@ class MainActivity : ComponentActivity() {
 
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
+                    topBar = {
+                        TopAppBar(
+                            title = { Text("My Music Player") },
+                            actions = {
+                                IconButton(onClick = { finish() }) {
+                                    Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = "Exit")
+                                }
+                            }
+                        )
+                    },
                     bottomBar = {
                         Column {
                             NowPlayingBar(viewModel = viewModel)
@@ -111,7 +123,7 @@ class MainActivity : ComponentActivity() {
         if (ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) {
             requestPermissionLauncher.launch(permission)
         } else {
-            viewModel.refreshSongs()
+            // Permission already granted, UI will handle initial load or user can click refresh
         }
     }
 

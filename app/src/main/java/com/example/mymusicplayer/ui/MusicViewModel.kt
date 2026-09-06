@@ -32,9 +32,18 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     private val _currentSong = MutableStateFlow<Song?>(null)
     val currentSong: StateFlow<Song?> = _currentSong.asStateFlow()
 
+    private val _currentRootDirectory = MutableStateFlow("")
+    val currentRootDirectory: StateFlow<String> = _currentRootDirectory.asStateFlow()
+
+    private val _showArtist = MutableStateFlow(true)
+    val showArtist: StateFlow<Boolean> = _showArtist.asStateFlow()
+
     init {
         val database = MusicDatabase.getDatabase(application)
         repository = MusicRepository(application, database.musicDao())
+        
+        _currentRootDirectory.value = repository.musicRootDirectory
+        _showArtist.value = repository.showArtist
         
         allSongs = repository.allSongs.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
         allPlaylists = repository.allPlaylists.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
@@ -105,14 +114,36 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun setMusicRootDirectory(path: String) {
-        val formattedPath = if (path.endsWith("/")) path else "$path/"
-        repository.musicRootDirectory = formattedPath
+        // Clean leading/trailing slashes for consistency
+        var cleanPath = path.trim()
+        if (cleanPath.startsWith("/")) cleanPath = cleanPath.substring(1)
+        if (cleanPath.isNotEmpty() && !cleanPath.endsWith("/")) cleanPath = "$cleanPath/"
+        
+        repository.musicRootDirectory = cleanPath
+        _currentRootDirectory.value = cleanPath
         refreshSongs()
+    }
+
+    fun setShowArtist(show: Boolean) {
+        repository.showArtist = show
+        _showArtist.value = show
     }
 
     fun createPlaylist(name: String) {
         viewModelScope.launch {
             repository.createPlaylist(name)
+        }
+    }
+
+    fun updatePlaylist(playlist: Playlist) {
+        viewModelScope.launch {
+            repository.updatePlaylist(playlist)
+        }
+    }
+
+    fun deletePlaylist(playlist: Playlist) {
+        viewModelScope.launch {
+            repository.deletePlaylist(playlist)
         }
     }
 

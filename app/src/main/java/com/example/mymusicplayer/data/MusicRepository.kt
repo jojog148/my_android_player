@@ -9,7 +9,19 @@ import kotlinx.coroutines.flow.first
 
 class MusicRepository(private val context: Context, private val musicDao: MusicDao) {
 
-    var musicRootDirectory: String = "Music/" // Default relative path
+    private val prefs = context.getSharedPreferences("music_prefs", Context.MODE_PRIVATE)
+    
+    var musicRootDirectory: String
+        get() = prefs.getString("root_dir", "Music/") ?: "Music/"
+        set(value) {
+            prefs.edit().putString("root_dir", value).apply()
+        }
+
+    var showArtist: Boolean
+        get() = prefs.getBoolean("show_artist", true)
+        set(value) {
+            prefs.edit().putBoolean("show_artist", value).apply()
+        }
 
     val allSongs: Flow<List<Song>> = musicDao.getAllSongs()
     val allPlaylists: Flow<List<Playlist>> = musicDao.getAllPlaylists()
@@ -46,7 +58,9 @@ class MusicRepository(private val context: Context, private val musicDao: MusicD
             while (cursor.moveToNext()) {
                 val id = cursor.getLong(idColumn)
                 val title = cursor.getString(titleColumn)
-                val artist = cursor.getString(artistColumn)
+                var artist = cursor.getString(artistColumn) ?: "Unknown Artist"
+                if (artist == "<unknown>") artist = "Unknown Artist"
+                
                 val duration = cursor.getLong(durationColumn)
                 val albumId = cursor.getLong(albumIdColumn)
                 val relativePath = cursor.getString(relativePathColumn)
@@ -87,6 +101,14 @@ class MusicRepository(private val context: Context, private val musicDao: MusicD
 
     suspend fun createPlaylist(name: String) {
         musicDao.createPlaylist(Playlist(name = name))
+    }
+
+    suspend fun updatePlaylist(playlist: Playlist) {
+        musicDao.updatePlaylist(playlist)
+    }
+
+    suspend fun deletePlaylist(playlist: Playlist) {
+        musicDao.deletePlaylist(playlist)
     }
 
     suspend fun addSongToPlaylist(playlistId: Long, songId: String) {

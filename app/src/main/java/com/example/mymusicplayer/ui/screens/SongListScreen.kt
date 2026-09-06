@@ -23,11 +23,18 @@ import com.example.mymusicplayer.ui.MusicViewModel
 fun SongListScreen(viewModel: MusicViewModel) {
     val songs by viewModel.allSongs.collectAsState()
     val playlists by viewModel.allPlaylists.collectAsState()
+    val savedRootDir by viewModel.currentRootDirectory.collectAsState()
+    val showArtist by viewModel.showArtist.collectAsState()
+    
     var songsToAdd by remember { mutableStateOf<List<Song>?>(null) }
-    var rootDir by remember { mutableStateOf("Music/") }
+    var rootDir by remember { mutableStateOf("") }
     
     var isDirectoryMode by remember { mutableStateOf(false) }
     var selectedDirectory by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(savedRootDir) {
+        rootDir = savedRootDir
+    }
 
     val displaySongs = if (selectedDirectory != null) {
         songs.filter { it.relativePath == selectedDirectory }
@@ -68,19 +75,38 @@ fun SongListScreen(viewModel: MusicViewModel) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Button(
-                onClick = { viewModel.refreshSongs() }
+                onClick = { viewModel.refreshSongs() },
+                modifier = Modifier.weight(1f)
             ) {
                 Text("Refresh Music Library")
             }
-            Spacer(Modifier.width(16.dp))
-            Text("Directory Mode")
-            Switch(
-                checked = isDirectoryMode,
-                onCheckedChange = { 
-                    isDirectoryMode = it
-                    if (!it) selectedDirectory = null
-                }
-            )
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("Directory Mode", style = MaterialTheme.typography.bodyMedium)
+                Spacer(Modifier.width(8.dp))
+                Switch(
+                    checked = isDirectoryMode,
+                    onCheckedChange = { 
+                        isDirectoryMode = it
+                        if (!it) selectedDirectory = null
+                    }
+                )
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("Show Artist", style = MaterialTheme.typography.bodyMedium)
+                Checkbox(
+                    checked = showArtist,
+                    onCheckedChange = { viewModel.setShowArtist(it) }
+                )
+            }
         }
 
         if (isDirectoryMode && selectedDirectory == null) {
@@ -120,6 +146,7 @@ fun SongListScreen(viewModel: MusicViewModel) {
                     SongItem(
                         song = song,
                         exists = exists,
+                        showArtist = showArtist,
                         onPlayClick = { if (exists) viewModel.playSong(song) },
                         onAddToPlaylistClick = { songsToAdd = listOf(song) }
                     )
@@ -158,7 +185,7 @@ fun SongListScreen(viewModel: MusicViewModel) {
 }
 
 @Composable
-fun SongItem(song: Song, exists: Boolean, onPlayClick: () -> Unit, onAddToPlaylistClick: () -> Unit) {
+fun SongItem(song: Song, exists: Boolean, showArtist: Boolean, onPlayClick: () -> Unit, onAddToPlaylistClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -178,7 +205,12 @@ fun SongItem(song: Song, exists: Boolean, onPlayClick: () -> Unit, onAddToPlayli
                     )
                 }
             }
-            Text(text = song.artist, style = MaterialTheme.typography.bodyMedium)
+            if (showArtist && song.artist.isNotBlank() && song.artist != "Unknown Artist") {
+                Text(
+                    text = song.artist,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
         }
         IconButton(onClick = onPlayClick) {
             Icon(
