@@ -38,6 +38,18 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     private val _showArtist = MutableStateFlow(true)
     val showArtist: StateFlow<Boolean> = _showArtist.asStateFlow()
 
+    private val _isRandomMode = MutableStateFlow(false)
+    val isRandomMode: StateFlow<Boolean> = _isRandomMode.asStateFlow()
+
+    private var stopAtCurrentSongEnd = false
+
+    fun setRandomMode(enabled: Boolean) {
+        _isRandomMode.value = enabled
+        if (!enabled && mediaController?.isPlaying == true) {
+            stopAtCurrentSongEnd = true
+        }
+    }
+
     init {
         val database = MusicDatabase.getDatabase(application)
         repository = MusicRepository(application, database.musicDao())
@@ -62,15 +74,27 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                 }
 
                 override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+                    if (stopAtCurrentSongEnd) {
+                        mediaController?.pause()
+                        stopAtCurrentSongEnd = false
+                    }
                     val songId = mediaItem?.mediaId
                     _currentSong.value = allSongs.value.find { it.id == songId }
+                }
+
+                override fun onPlaybackStateChanged(playbackState: Int) {
+                    if (playbackState == Player.STATE_ENDED && stopAtCurrentSongEnd) {
+                        mediaController?.pause()
+                        stopAtCurrentSongEnd = false
+                    }
                 }
             })
         }, MoreExecutors.directExecutor())
     }
 
     fun playSong(song: Song, playlist: List<Song> = allSongs.value) {
-        val mediaItems = playlist.map { s ->
+        val effectivePlaylist = if (_isRandomMode.value) playlist.shuffled() else playlist
+        val mediaItems = effectivePlaylist.map { s ->
             val metadata = androidx.media3.common.MediaMetadata.Builder()
                 .setTitle(s.title)
                 .setArtist(s.artist)
@@ -84,7 +108,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                 .build()
         }
         
-        val startIndex = playlist.indexOfFirst { it.id == song.id }.coerceAtLeast(0)
+        val startIndex = effectivePlaylist.indexOfFirst { it.id == song.id }.coerceAtLeast(0)
         
         mediaController?.setMediaItems(mediaItems, startIndex, 0L)
         mediaController?.prepare()

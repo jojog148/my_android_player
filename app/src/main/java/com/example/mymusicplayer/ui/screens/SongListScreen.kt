@@ -25,6 +25,7 @@ fun SongListScreen(viewModel: MusicViewModel) {
     val playlists by viewModel.allPlaylists.collectAsState()
     val savedRootDir by viewModel.currentRootDirectory.collectAsState()
     val showArtist by viewModel.showArtist.collectAsState()
+    val isRandomMode by viewModel.isRandomMode.collectAsState()
     
     var songsToAdd by remember { mutableStateOf<List<Song>?>(null) }
     var rootDir by remember { mutableStateOf("") }
@@ -34,6 +35,85 @@ fun SongListScreen(viewModel: MusicViewModel) {
 
     LaunchedEffect(savedRootDir) {
         rootDir = savedRootDir
+    }
+
+    if (isRandomMode) {
+        val currentSong by viewModel.currentSong.collectAsState()
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = "Random Player Mode",
+                    style = MaterialTheme.typography.titleLarge
+                )
+                Spacer(Modifier.height(16.dp))
+                Button(
+                    onClick = {
+                        if (songs.isNotEmpty()) {
+                            viewModel.playSong(songs.random(), songs)
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth(0.8f)
+                        .height(56.dp)
+                ) {
+                    Icon(Icons.Default.PlayArrow, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Start Random Player", style = MaterialTheme.typography.titleMedium)
+                }
+
+                Spacer(Modifier.height(24.dp))
+
+                if (currentSong != null) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(0.85f),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = "Now Playing",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                text = currentSong!!.title,
+                                style = MaterialTheme.typography.titleMedium,
+                                maxLines = 1
+                            )
+                            if (showArtist && currentSong!!.artist.isNotBlank() && currentSong!!.artist != "Unknown Artist") {
+                                Spacer(Modifier.height(2.dp))
+                                Text(
+                                    text = currentSong!!.artist,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    maxLines = 1
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    Text(
+                        text = "No music playing",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+        return
     }
 
     val displaySongs = if (selectedDirectory != null) {

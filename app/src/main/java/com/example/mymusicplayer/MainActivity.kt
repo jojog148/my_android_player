@@ -60,8 +60,11 @@ class MainActivity : ComponentActivity() {
                         Column {
                             NowPlayingBar(viewModel = viewModel)
                             NavigationBar {
+                                val isRandomMode by viewModel.isRandomMode.collectAsState()
+
                                 NavigationBarItem(
                                     selected = selectedTab == 0,
+                                    enabled = !isRandomMode || selectedTab == 0,
                                     onClick = {
                                         selectedTab = 0
                                         navController.navigate("songs")
@@ -70,7 +73,19 @@ class MainActivity : ComponentActivity() {
                                     label = { Text("Songs") }
                                 )
                                 NavigationBarItem(
+                                    selected = false,
+                                    onClick = { viewModel.setRandomMode(!isRandomMode) },
+                                    icon = {
+                                        Switch(
+                                            checked = isRandomMode,
+                                            onCheckedChange = { viewModel.setRandomMode(it) }
+                                        )
+                                    },
+                                    label = { Text("Random") }
+                                )
+                                NavigationBarItem(
                                     selected = selectedTab == 1,
+                                    enabled = !isRandomMode || selectedTab == 1,
                                     onClick = {
                                         selectedTab = 1
                                         navController.navigate("playlists")

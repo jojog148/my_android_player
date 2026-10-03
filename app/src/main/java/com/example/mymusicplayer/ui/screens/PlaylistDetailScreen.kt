@@ -23,6 +23,11 @@ import com.example.mymusicplayer.ui.MusicViewModel
 fun PlaylistDetailScreen(viewModel: MusicViewModel, playlist: Playlist, onBack: () -> Unit) {
     val songs by viewModel.getSongsInPlaylist(playlist.id).collectAsState(emptyList())
     val showArtist by viewModel.showArtist.collectAsState()
+    val isRandomMode by viewModel.isRandomMode.collectAsState()
+
+    val displaySongs = remember(songs, isRandomMode) {
+        if (isRandomMode) songs.shuffled() else songs
+    }
 
     Scaffold(
         topBar = {
@@ -41,7 +46,7 @@ fun PlaylistDetailScreen(viewModel: MusicViewModel, playlist: Playlist, onBack: 
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            items(songs) { song ->
+            items(displaySongs) { song ->
                 var menuExpanded by remember { mutableStateOf(false) }
                 val exists = remember(song.mediaUri) { viewModel.isFileExisting(song.mediaUri) }
 
@@ -78,7 +83,7 @@ fun PlaylistDetailScreen(viewModel: MusicViewModel, playlist: Playlist, onBack: 
                             )
                         }
                     }
-                    IconButton(onClick = { if (exists) viewModel.playSong(song, songs) }) {
+                    IconButton(onClick = { if (exists) viewModel.playSong(song, displaySongs) }) {
                         Icon(
                             imageVector = Icons.Default.PlayArrow,
                             contentDescription = "Play",
